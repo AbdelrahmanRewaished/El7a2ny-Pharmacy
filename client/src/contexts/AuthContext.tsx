@@ -19,7 +19,12 @@ interface IAuthState {
 
 interface IAuthContext {
   authState: IAuthState;
-  login: (accessToken: string, role: UserRole) => void;
+  updateVerificationStatus: (verificationStatus: VerificationStatus) => void;
+  login: (
+    accessToken: string,
+    role: UserRole,
+    verificationStatus?: VerificationStatus
+  ) => void;
   logout: () => Promise<void>;
   refreshAuth: () => Promise<string>;
 }
@@ -30,6 +35,7 @@ const AuthContext = createContext<IAuthContext>({
     accessToken: null,
     role: UserRole.GUEST,
   },
+  updateVerificationStatus: () => {},
   login: () => {},
   logout: () => Promise.resolve(),
   refreshAuth: () => Promise.resolve(""),
@@ -155,15 +161,34 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         {},
         { withCredentials: true }
       );
-      login(response.data.accessToken, response.data.role);
+      login(
+        response.data.accessToken,
+        response.data.role,
+        response.data.verificationStatus
+      );
       return response.data.accessToken;
     } catch (error) {
       logout();
     }
   };
 
+  const updateVerificationStatus = (verificationStatus: VerificationStatus) => {
+    setAuthState({
+      ...authState,
+      verificationStatus,
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ authState, login, logout, refreshAuth }}>
+    <AuthContext.Provider
+      value={{
+        authState,
+        updateVerificationStatus,
+        login,
+        logout,
+        refreshAuth,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

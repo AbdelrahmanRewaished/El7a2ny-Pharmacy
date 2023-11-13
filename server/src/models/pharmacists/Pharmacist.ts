@@ -1,8 +1,9 @@
 import mongoose, { Document, Schema } from "mongoose";
 import isEmail from "validator/lib/isEmail";
-import { IPharmacist } from "./interfaces/IPharmacist";
 import bcrypt from "bcrypt";
+
 import PasswordResetSchema from "../users/PasswordReset";
+import { IPharmacist } from "./interfaces/IPharmacist";
 
 export interface IPharmacistModel extends IPharmacist, Document {}
 
@@ -19,13 +20,21 @@ export const PharmacistSchema = new Schema<IPharmacistModel>(
       enum: ["unspecified", "male", "female"],
       default: "unspecified",
     },
-    mobileNumber: { type: String, required: false }, //TO BE REQUIRED
+    mobileNumber: { type: String, required: false }, //TODO: TO BE REQUIRED
     hourlyRate: { type: Number, required: true },
     affiliation: { type: String, required: true },
     educationalBackground: { type: String, required: true },
-    identification: { type: String },
-    pharmacyDegree: { type: String },
-    workingLicense: { type: String },
+    identificationUrl: { type: String },
+    pharmacyDegreeUrl: { type: String },
+    workingLicenseUrl: { type: String },
+    contractUrl: { type: String, select: false },
+    contractStatus: {
+      type: String,
+      enum: ["pending", "accepted", "rejected"],
+      required: true,
+      default: "accepted",
+      select: false,
+    },
     passwordReset: {
       type: PasswordResetSchema,
       select: false,
@@ -34,9 +43,9 @@ export const PharmacistSchema = new Schema<IPharmacistModel>(
   { timestamps: true }
 );
 
-// PharmacistSchema.plugin(bcrypt);
-
-PharmacistSchema.plugin(require("mongoose-bcrypt"), { rounds: 10 });
+PharmacistSchema.methods.verifyPassword = function (password: string) {
+  return bcrypt.compare(password, this.password);
+};
 
 PharmacistSchema.methods.verifyPasswordResetOtp = function (otp: string) {
   return bcrypt.compare(otp, this.passwordReset.otp);

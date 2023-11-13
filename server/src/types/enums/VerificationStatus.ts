@@ -2,7 +2,7 @@ enum VerificationStatus {
   rejected,
   pendingDocumentUploads,
   pendingContractAcceptance,
-  verified,
+  accepted,
 }
 
 export default VerificationStatus;

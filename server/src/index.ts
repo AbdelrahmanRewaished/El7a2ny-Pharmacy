@@ -47,3 +47,11 @@ app.use(
 app.use("/auth", authRouter);
 app.use("/auth", forgetPasswordRouter);
 app.use("/payments", paymentRouter);
+
+//------------------temp routes------------------
+import tempAdminRouter from "./routes/admins/Admin";
+import tempAuthRouter from "./routes/auth/Register";
+import tempUsersRouter from "./routes/users/User";
+app.use("/temp-admins/", tempAdminRouter);
+app.use("/temp-auth/", tempAuthRouter);
+app.use("/temp-users/", tempUsersRouter);

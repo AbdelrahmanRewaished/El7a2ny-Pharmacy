@@ -31,7 +31,7 @@ const PharmacistRegistrationRequest = () => {
     };
 
     axios
-      .post(`${config.API_URL}/register/pharmacist`, requestBody)
+      .post(`${config.API_URL}/temp-auth/pharmacist-registration`, requestBody)
       .then((response) => {
         console.log(response.data);
         alert(
