@@ -1,4 +1,5 @@
-import { useState, useEffect, Ref, forwardRef } from "react";
+import React from "react";
+import { useState, useEffect, forwardRef } from "react";
 import { Checkbox, FormControlLabel, Typography, Button, Box, Snackbar } from "@mui/material";
 import axios from "axios";
 import config from "../../config/config";
@@ -16,7 +17,7 @@ interface Props {
   canViewQuantity: boolean;
 }
 
-function Alert(props: AlertProps, ref: Ref<any>) {
+function Alert(props: AlertProps, ref: React.Ref<any>) {
   return <MuiAlert elevation={6} variant="filled" ref={ref} {...props} />;
 }
 
@@ -29,7 +30,8 @@ const MedicineList: React.FC<Props> = ({ canBuy, canEdit, canViewSales, canViewQ
   const [usageFilter, setUsageFilter] = useState<string[]>([]);
   const [showMore, setShowMore] = useState(false);
   const [medSales, setMedSales] = useState<{ [key: string]: number }>({});
-  const [archiveVisibleMeds, setArchiveVisibleMeds] = useState<string>("Unarchived"); // Unarchived, Archived, All or None
+  const [archiveVisibleMeds, setArchiveVisibleMeds] = useState<string>("Unarchived");
+  const [activeIngredient, setActiveIngredient] = useState("");
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<AlertColor>("success");
@@ -64,19 +66,40 @@ const MedicineList: React.FC<Props> = ({ canBuy, canEdit, canViewSales, canViewQ
 
   const handleSearch = async (searchTerm: string, searchCollection: string) => {
     try {
-      let responseData = await goSearch(searchTerm, searchCollection);
-      setMedicines(responseData);
-    } catch (err: any) {
-      if (err.response?.status === 400) {
+      console.log(`Searching for: ${searchTerm} in collection: ${searchCollection}`); // Debugging log
+
+      if (!searchTerm) {
+        // If searchTerm is empty, fetch all medicines
         fetchMedicines();
         return;
       }
-      if (err.response?.status === 404) {
-        setMedicines([]);
+
+      // Use goSearch to perform the search
+      const responseData = await goSearch(searchTerm, searchCollection);
+
+      if (responseData && responseData.length === 0) {
+        console.log("No medicines found with the given search term.");
+      }
+
+      setMedicines(responseData);
+    } catch (err: any) {
+      console.error(`Search error: ${err}`); // Log errors for debugging
+      if (err.response?.status === 400) {
+        // Handle bad request errors
+        fetchMedicines(); // Optional: fetch all medicines or handle differently
+      } else if (err.response?.status === 404) {
+        // Handle not found errors
+        setMedicines([]); // Set medicines to empty if none found
       } else {
+        // Log other types of errors
         console.log(err);
       }
     }
+  };
+
+  const handleViewAlternatives = (ingredient: string) => {
+    setActiveIngredient(ingredient);
+    handleSearch(ingredient, "medicines");
   };
 
   const handleShowMoreClick = () => {
@@ -96,7 +119,7 @@ const MedicineList: React.FC<Props> = ({ canBuy, canEdit, canViewSales, canViewQ
   };
 
   const handleArchivedChange = (event: React.ChangeEvent<HTMLInputElement>, checked: boolean): void => {
-    if (/*became*/ checked) {
+    if (checked) {
       console.log("checked");
       if (archiveVisibleMeds !== "None") {
         setArchiveVisibleMeds("All");
@@ -104,7 +127,6 @@ const MedicineList: React.FC<Props> = ({ canBuy, canEdit, canViewSales, canViewQ
         setArchiveVisibleMeds(event.target.value);
       }
     } else {
-      /* became unchecked */
       if (archiveVisibleMeds !== "All") {
         setArchiveVisibleMeds("None");
       } else {
@@ -125,7 +147,7 @@ const MedicineList: React.FC<Props> = ({ canBuy, canEdit, canViewSales, canViewQ
       })
       .catch((err) => {
         console.error(err);
-        setSnackbarMessage(`Something went wrong ${newMedicine.isArchived ? "archiving" : "Unarchiving"}!`);
+        setSnackbarMessage(`Something went wrong ${newMedicine.isArchived ? "archiving" : "unarchiving"}!`);
         setSnackbarSeverity("error");
         setSnackbarOpen(true);
         return 1;
@@ -238,7 +260,11 @@ const MedicineList: React.FC<Props> = ({ canBuy, canEdit, canViewSales, canViewQ
         </Box>
 
         <Box>
-          <NameSearchBar searchCollection="medicines" onSearch={handleSearch} initialValue="(or leave empty for all)" />
+          <NameSearchBar
+            searchCollection="medicines"
+            onSearch={handleSearch}
+            initialValue={activeIngredient || "(or leave empty for all)"}
+          />
           {filteredMedicines.length === 0 && <p>No medicines found.</p>}
           <Box
             sx={{
@@ -268,6 +294,7 @@ const MedicineList: React.FC<Props> = ({ canBuy, canEdit, canViewSales, canViewQ
                   canViewQuantity={canViewQuantity}
                   sales={medSales[medicine._id]}
                   handleArchiveOrUnArchiveButton={canEdit ? handleArchiveOrUnArchiveButton : undefined}
+                  onViewAlternative={handleViewAlternatives}
                 />
               </div>
             ))}

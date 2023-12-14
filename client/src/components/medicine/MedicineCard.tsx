@@ -30,6 +30,7 @@ interface Props {
   canViewQuantity: boolean;
   sales?: number;
   handleArchiveOrUnArchiveButton?: (medicine: Medicine) => number;
+  onViewAlternative?: (activeIngredient: string) => void;
 }
 
 const MedicineCard: React.FC<Props> = ({
@@ -41,12 +42,20 @@ const MedicineCard: React.FC<Props> = ({
   canViewSales,
   canViewQuantity,
   sales = 0,
-  handleArchiveOrUnArchiveButton = () => {}
+  handleArchiveOrUnArchiveButton = () => {},
+  onViewAlternative
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editedMedicine, setEditedMedicine] = useState(medicine);
   const [alertVisible, setAlertVisible] = useState(false);
   const navigate = useNavigate();
+
+  // New handler for the 'View Alternative' button
+  const handleViewAlternatives = () => {
+    if (onViewAlternative && editedMedicine.activeIngredients.length > 0) {
+      onViewAlternative(editedMedicine.activeIngredients[0]);
+    }
+  };
 
   const handleEditClick = () => {
     setModalOpen(true);
@@ -245,6 +254,9 @@ const MedicineCard: React.FC<Props> = ({
                 <Typography variant="body1" color="text.secondary" sx={{ opacity: 0.6 }}>
                   <span style={{ fontWeight: "bold" }}>Out of Stock</span>
                 </Typography>
+                <Button size="small" color="primary" onClick={handleViewAlternatives}>
+                  View Alternative
+                </Button>
               </Box>
             ) : (
               <>
